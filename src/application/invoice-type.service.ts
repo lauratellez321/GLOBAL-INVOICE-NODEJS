@@ -1,3 +1,34 @@
-import { PercentageTaxRule, TaxCalculator } from '../domain/invoice/tax-calculator.js';
-import { SqliteInvoiceTypeRepository } from '../infrastructure/database/sqlite.js';
-export class InvoiceTypeService { constructor(private readonly repo:SqliteInvoiceTypeRepository,private readonly calculator:TaxCalculator){} load(){this.repo.all().forEach(type=>this.calculator.register(new PercentageTaxRule(type.code,type.vatRate,type.withholdingRate)));} all(){return this.repo.all();} create(type:{code:string;vatRate:number;withholdingRate:number}){const created=this.repo.create(type);this.calculator.register(new PercentageTaxRule(created.code,created.vatRate,created.withholdingRate));return created;} }
+import {
+  PercentageTaxRule,
+  TaxCalculator,
+} from "../domain/invoice/tax-calculator.js";
+import { SqliteInvoiceTypeRepository } from "../infrastructure/database/sqlite.js";
+export class InvoiceTypeService {
+  constructor(
+    private readonly repo: SqliteInvoiceTypeRepository,
+    private readonly calculator: TaxCalculator,
+  ) {}
+  load() {
+    this.repo
+      .all()
+      .forEach((type) =>
+        this.calculator.register(
+          new PercentageTaxRule(type.code, type.vatRate, type.withholdingRate),
+        ),
+      );
+  }
+  all() {
+    return this.repo.all();
+  }
+  create(type: { code: string; vatRate: number; withholdingRate: number }) {
+    const created = this.repo.create(type);
+    this.calculator.register(
+      new PercentageTaxRule(
+        created.code,
+        created.vatRate,
+        created.withholdingRate,
+      ),
+    );
+    return created;
+  }
+}

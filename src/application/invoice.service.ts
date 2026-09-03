@@ -12,7 +12,14 @@ export class InvoiceService {
     private readonly onCreated: () => void,
   ) {}
   async list() {
-    return Promise.all(this.invoices.all().map(async invoice => ({ ...invoice, totalInWords: await this.words.toWords(invoice.total) })));
+    return Promise.all(
+      this.invoices
+        .all()
+        .map(async (invoice) => ({
+          ...invoice,
+          totalInWords: await this.words.toWords(invoice.total),
+        })),
+    );
   }
   create(draft: InvoiceDraft) {
     const invoice = this.invoices.create(
@@ -25,6 +32,18 @@ export class InvoiceService {
   totals() {
     return this.invoices.totals();
   }
-  update(id:number,draft:InvoiceDraft){const invoice=this.invoices.update(id,draft,this.calculator.calculate(draft.type,draft.subtotal));if(invoice)this.onCreated();return invoice;}
-  delete(id:number){const deleted=this.invoices.delete(id);if(deleted)this.onCreated();return deleted;}
+  update(id: number, draft: InvoiceDraft) {
+    const invoice = this.invoices.update(
+      id,
+      draft,
+      this.calculator.calculate(draft.type, draft.subtotal),
+    );
+    if (invoice) this.onCreated();
+    return invoice;
+  }
+  delete(id: number) {
+    const deleted = this.invoices.delete(id);
+    if (deleted) this.onCreated();
+    return deleted;
+  }
 }
