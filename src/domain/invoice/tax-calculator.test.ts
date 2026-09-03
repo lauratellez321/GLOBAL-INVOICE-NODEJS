@@ -4,6 +4,7 @@ import { NationalTaxRule } from "./rules/national-tax.rule.js";
 import { ExportTaxRule } from "./rules/export-tax.rule.js";
 import { GovernmentTaxRule } from "./rules/government-tax.rule.js";
 import { UnknownInvoiceTypeError } from "./tax-calculator.js";
+import { PercentageTaxRule } from "./tax-calculator.js";
 describe("TaxCalculator", () => {
   const calculator = new TaxCalculator([new NationalTaxRule(), new ExportTaxRule(), new GovernmentTaxRule()]);
   it.each([
@@ -18,4 +19,9 @@ describe("TaxCalculator", () => {
     }),
   );
   it("rejects an unregistered invoice type", () => expect(() => calculator.calculate("NGO", 100)).toThrow(UnknownInvoiceTypeError));
+  it("registers a new percentage-based type without changing existing rules", () => {
+    calculator.register(new PercentageTaxRule("NGO", 0.1, 0.02));
+    expect(calculator.supportedTypes()).toContain("NGO");
+    expect(calculator.calculate("NGO", 100)).toEqual({ tax: 10, withholding: 2, total: 108 });
+  });
 });
