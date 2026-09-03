@@ -12,8 +12,8 @@ export function apiRouter(
 ) {
   const router = Router();
   const secured = authenticate(jwtSecret);
-  router.get('/invoice-types', secured, allow('OPERATOR','AUDITOR'), (_req,res) => res.json(types.all()));
-  router.post('/invoice-types', secured, allow('OPERATOR'), (req,res) => { const input=z.object({code:z.string().trim().min(2).max(30).regex(/^[A-Z0-9_]+$/),vatRate:z.number().min(0).max(1),withholdingRate:z.number().min(0).max(1)}).safeParse(req.body); if(!input.success)return res.status(400).json({message:'Configuración inválida'}); try{return res.status(201).json(types.create(input.data));}catch{return res.status(409).json({message:'El tipo ya existe'});} });
+  router.get('/invoice-types', secured, allow('OPERATOR','AUDITOR'), async (_req,res) => res.json(await types.all()));
+  router.post('/invoice-types', secured, allow('OPERATOR'), async (req,res) => { const input=z.object({code:z.string().trim().min(2).max(30).regex(/^[A-Z0-9_]+$/),vatRate:z.number().min(0).max(1),withholdingRate:z.number().min(0).max(1)}).safeParse(req.body); if(!input.success)return res.status(400).json({message:'Configuración inválida'}); try{return res.status(201).json(await types.create(input.data));}catch{return res.status(409).json({message:'El tipo ya existe'});} });
   router.post("/auth/login", async (req, res) => {
     const input = z
       .object({ email: z.string().email(), password: z.string().min(1) })
@@ -41,22 +41,22 @@ export function apiRouter(
   router.get("/invoices", secured, allow("OPERATOR", "AUDITOR"), async (_req, res) => {
     try { return res.json(await invoices.list()); } catch { return res.status(502).json({ message: "No fue posible consultar el servicio SOAP" }); }
   });
-  router.post("/invoices", secured, allow("OPERATOR"), (req, res) => {
+  router.post("/invoices", secured, allow("OPERATOR"), async (req, res) => {
     const input = schema.safeParse(req.body);
     if (!input.success)
       return res.status(400).json({ message: input.error.issues[0].message });
     try {
-      return res.status(201).json(invoices.create(input.data));
+      return res.status(201).json(await invoices.create(input.data));
     } catch (error) {
       if (error instanceof UnknownInvoiceTypeError)
         return res.status(400).json({ message: error.message });
       throw error;
     }
   });
-  router.put('/invoices/:id',secured,allow('OPERATOR'),(req,res)=>{const input=schema.safeParse(req.body);if(!input.success)return res.status(400).json({message:input.error.issues[0].message});try{const invoice=invoices.update(Number(req.params.id),input.data);return invoice?res.json(invoice):res.sendStatus(404);}catch(error){if(error instanceof UnknownInvoiceTypeError)return res.status(400).json({message:error.message});throw error;}});
-  router.get("/dashboard", secured, allow("AUDITOR"), (_req, res) =>
-    res.json(invoices.totals()),
+  router.put('/invoices/:id',secured,allow('OPERATOR'),async (req,res)=>{const input=schema.safeParse(req.body);if(!input.success)return res.status(400).json({message:input.error.issues[0].message});try{const invoice=await invoices.update(Number(req.params.id),input.data);return invoice?res.json(invoice):res.sendStatus(404);}catch(error){if(error instanceof UnknownInvoiceTypeError)return res.status(400).json({message:error.message});throw error;}});
+  router.get("/dashboard", secured, allow("AUDITOR"), async (_req, res) =>
+    res.json(await invoices.totals()),
   );
-  router.delete('/invoices/:id',secured,allow('OPERATOR'),(req,res)=>invoices.delete(Number(req.params.id))?res.sendStatus(204):res.sendStatus(404));
+  router.delete('/invoices/:id',secured,allow('OPERATOR'),async (req,res)=>(await invoices.delete(Number(req.params.id)))?res.sendStatus(204):res.sendStatus(404));
   return router;
 }

@@ -16,12 +16,12 @@ export interface InvoiceRepository {
   create(
     draft: InvoiceDraft,
     values: Pick<Invoice, "tax" | "withholding" | "total">,
-  ): Invoice;
-  update(id:number,draft:InvoiceDraft,values:Pick<Invoice,"tax"|"withholding"|"total">):Invoice|undefined;
-  delete(id:number):boolean;
-  all(): Invoice[];
-  findById(id: number): Invoice | undefined;
-  totals(): { type: InvoiceType; total: number }[];
+  ): Promise<Invoice>;
+  update(id:number,draft:InvoiceDraft,values:Pick<Invoice,"tax"|"withholding"|"total">):Promise<Invoice|undefined>;
+  delete(id:number):Promise<boolean>;
+  all(): Promise<Invoice[]>;
+  findById(id: number): Promise<Invoice | undefined>;
+  totals(): Promise<{ type: InvoiceType; total: number }[]>;
 }
 export interface User {
   id: number;
@@ -30,7 +30,18 @@ export interface User {
   role: Role;
 }
 export interface UserRepository {
-  find(email: string): User | undefined;
+  find(email: string): Promise<User | undefined>;
+  createIfMissing(user: Omit<User, "id">): Promise<void>;
+}
+export interface InvoiceTypeConfig {
+  code: string;
+  name: string;
+  vatRate: number;
+  withholdingRate: number;
+}
+export interface InvoiceTypeRepository {
+  all(): Promise<InvoiceTypeConfig[]>;
+  create(type: Omit<InvoiceTypeConfig, "name"> & { name?: string }): Promise<InvoiceTypeConfig>;
 }
 export interface NumberWordsGateway {
   toWords(value: number): Promise<string>;
