@@ -5,6 +5,7 @@ import type {
   Invoice,
   InvoiceDraft,
   InvoiceRepository,
+  InvoiceTypeRepository,
   Role,
   User,
   UserRepository,
@@ -30,13 +31,13 @@ export function openDatabase(path: string) {
   }
   return db;
 }
-export class SqliteInvoiceTypeRepository { constructor(private readonly db:Database.Database){} all(){return this.db.prepare('SELECT code,name,vat_rate as vatRate,withholding_rate as withholdingRate FROM invoice_types').all() as {code:string;name:string;vatRate:number;withholdingRate:number}[];} create(type:{code:string;vatRate:number;withholdingRate:number}){this.db.prepare('INSERT INTO invoice_types (code,name,vat_rate,withholding_rate) VALUES (?,?,?,?)').run(type.code,type.code,type.vatRate,type.withholdingRate);return {...type,name:type.code};} }
+export class SqliteInvoiceTypeRepository implements InvoiceTypeRepository { constructor(private readonly db:Database.Database){} async all(){return this.db.prepare('SELECT code,name,vat_rate as vatRate,withholding_rate as withholdingRate FROM invoice_types').all() as {code:string;name:string;vatRate:number;withholdingRate:number}[];} async create(type:{code:string;name?:string;vatRate:number;withholdingRate:number}){const name=type.name??type.code;this.db.prepare('INSERT INTO invoice_types (code,name,vat_rate,withholding_rate) VALUES (?,?,?,?)').run(type.code,name,type.vatRate,type.withholdingRate);return {...type,name};} }
 export class SqliteInvoiceRepository implements InvoiceRepository {
   constructor(private readonly db: Database.Database) {}
-  create(
+  async create(
     draft: InvoiceDraft,
     values: Pick<Invoice, "tax" | "withholding" | "total">,
-  ): Invoice {
+  ): Promise<Invoice> {
     const result = this.db
       .prepare(
         "INSERT INTO invoices (type,subtotal,customs_code,tax,withholding,total) VALUES (?,?,?,?,?,?)",
@@ -49,25 +50,25 @@ export class SqliteInvoiceRepository implements InvoiceRepository {
         values.withholding,
         values.total,
       );
-    return this.findById(Number(result.lastInsertRowid))!;
+    return (await this.findById(Number(result.lastInsertRowid)))!;
   }
-  update(id:number,draft:InvoiceDraft,values:Pick<Invoice,"tax"|"withholding"|"total">){const result=this.db.prepare('UPDATE invoices SET type=?,subtotal=?,customs_code=?,tax=?,withholding=?,total=? WHERE id=?').run(draft.type,draft.subtotal,draft.customsCode??null,values.tax,values.withholding,values.total,id);return result.changes?this.findById(id):undefined;}
-  delete(id:number){return this.db.prepare('DELETE FROM invoices WHERE id=?').run(id).changes>0;}
-  all(): Invoice[] {
+  async update(id:number,draft:InvoiceDraft,values:Pick<Invoice,"tax"|"withholding"|"total">){const result=this.db.prepare('UPDATE invoices SET type=?,subtotal=?,customs_code=?,tax=?,withholding=?,total=? WHERE id=?').run(draft.type,draft.subtotal,draft.customsCode??null,values.tax,values.withholding,values.total,id);return result.changes?this.findById(id):undefined;}
+  async delete(id:number){return this.db.prepare('DELETE FROM invoices WHERE id=?').run(id).changes>0;}
+  async all(): Promise<Invoice[]> {
     return this.db
       .prepare(
         "SELECT id,type,subtotal,customs_code as customsCode,tax,withholding,total,created_at as createdAt FROM invoices ORDER BY id DESC",
       )
       .all() as Invoice[];
   }
-  findById(id: number): Invoice | undefined {
+  async findById(id: number): Promise<Invoice | undefined> {
     return this.db
       .prepare(
         "SELECT id,type,subtotal,customs_code as customsCode,tax,withholding,total,created_at as createdAt FROM invoices WHERE id=?",
       )
       .get(id) as Invoice | undefined;
   }
-  totals() {
+  async totals() {
     return this.db
       .prepare(
         "SELECT type,ROUND(SUM(total),2) total FROM invoices GROUP BY type",
@@ -77,11 +78,15 @@ export class SqliteInvoiceRepository implements InvoiceRepository {
 }
 export class SqliteUserRepository implements UserRepository {
   constructor(private readonly db: Database.Database) {}
-  find(email: string) {
+  async find(email: string) {
     return this.db
       .prepare(
         "SELECT id,email,password_hash as passwordHash,role FROM users WHERE email=?",
       )
       .get(email) as User | undefined;
+  }
+  async createIfMissing(user: Omit<User, "id">) {
+    this.db.prepare("INSERT OR IGNORE INTO users (email,password_hash,role) VALUES (?,?,?)")
+      .run(user.email, user.passwordHash, user.role);
   }
 }

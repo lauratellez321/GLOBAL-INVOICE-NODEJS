@@ -7,7 +7,13 @@ if (!jwtSecret || jwtSecret.length < 32)
 export const env = {
   port: Number(process.env.PORT ?? 3000),
   jwtSecret,
-  databasePath: process.env.DATABASE_PATH ?? "./data/global-invoice.db",
+  // El único directorio escribible de una Vercel Function es /tmp.
+  // Para producción se recomienda una base de datos gestionada; ver README.
+  databasePath:
+    process.env.DATABASE_PATH ??
+    (process.env.VERCEL ? "/tmp/global-invoice.db" : "./data/global-invoice.db"),
+  databaseUrl: process.env.DATABASE_URL,
+  isVercel: Boolean(process.env.VERCEL),
   clientOrigin: process.env.CLIENT_ORIGIN ?? "http://localhost:4200",
   seeds: [
     {

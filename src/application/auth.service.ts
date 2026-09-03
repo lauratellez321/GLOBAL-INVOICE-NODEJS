@@ -7,7 +7,7 @@ export class AuthService {
     private readonly jwtSecret: string,
   ) {}
   async login(email: string, password: string) {
-    const user = this.users.find(email);
+    const user = await this.users.find(email);
     if (!user || !(await bcrypt.compare(password, user.passwordHash)))
       return undefined;
     return {

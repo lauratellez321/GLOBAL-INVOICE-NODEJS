@@ -2,15 +2,15 @@ import {
   PercentageTaxRule,
   TaxCalculator,
 } from "../domain/invoice/tax-calculator.js";
-import { SqliteInvoiceTypeRepository } from "../infrastructure/database/sqlite.js";
+import type { InvoiceTypeRepository } from "../domain/invoice/invoice.types.js";
 export class InvoiceTypeService {
   constructor(
-    private readonly repo: SqliteInvoiceTypeRepository,
+    private readonly repo: InvoiceTypeRepository,
     private readonly calculator: TaxCalculator,
   ) {}
-  load() {
-    this.repo
-      .all()
+  async load() {
+    (await this.repo
+      .all())
       .forEach((type) =>
         this.calculator.register(
           new PercentageTaxRule(type.code, type.vatRate, type.withholdingRate),
@@ -20,8 +20,8 @@ export class InvoiceTypeService {
   all() {
     return this.repo.all();
   }
-  create(type: { code: string; vatRate: number; withholdingRate: number }) {
-    const created = this.repo.create(type);
+  async create(type: { code: string; name?: string; vatRate: number; withholdingRate: number }) {
+    const created = await this.repo.create(type);
     this.calculator.register(
       new PercentageTaxRule(
         created.code,
