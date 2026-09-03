@@ -15,16 +15,4 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL,
   isVercel: Boolean(process.env.VERCEL),
   clientOrigin: process.env.CLIENT_ORIGIN ?? "http://localhost:4200",
-  seeds: [
-    {
-      email: process.env.SEED_OPERATOR_EMAIL,
-      password: process.env.SEED_OPERATOR_PASSWORD,
-      role: "OPERATOR" as const,
-    },
-    {
-      email: process.env.SEED_AUDITOR_EMAIL,
-      password: process.env.SEED_AUDITOR_PASSWORD,
-      role: "AUDITOR" as const,
-    },
-  ],
 };

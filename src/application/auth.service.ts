@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import type { UserRepository } from "../domain/invoice/invoice.types.js";
+import type { Role, UserRepository } from "../domain/invoice/invoice.types.js";
 export class AuthService {
   constructor(
     private readonly users: UserRepository,
@@ -16,5 +16,12 @@ export class AuthService {
       }),
       role: user.role,
     };
+  }
+  async register(email: string, password: string, role: Role) {
+    await this.users.create({
+      email,
+      passwordHash: await bcrypt.hash(password, 12),
+      role,
+    });
   }
 }

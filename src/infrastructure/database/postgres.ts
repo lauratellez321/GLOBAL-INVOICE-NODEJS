@@ -142,9 +142,9 @@ export class PostgresUserRepository implements UserRepository {
     return rows[0];
   }
 
-  async createIfMissing(user: Omit<User, "id">) {
+  async create(user: Omit<User, "id">) {
     await this.db.pool.query(
-      "INSERT INTO users (email, password_hash, role) VALUES ($1,$2,$3) ON CONFLICT (email) DO NOTHING",
+      "INSERT INTO users (email, password_hash, role) VALUES ($1,$2,$3)",
       [user.email, user.passwordHash, user.role],
     );
   }

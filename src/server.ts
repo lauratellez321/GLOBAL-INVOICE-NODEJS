@@ -16,5 +16,7 @@ export default app;
 if (!env.isVercel) {
   const http = createServer(app);
   io = new Server(http, { cors: { origin: env.clientOrigin } });
-  http.listen(env.port);
+  http.listen(env.port, () =>
+    console.log(`API disponible en http://localhost:${env.port}`),
+  );
 }

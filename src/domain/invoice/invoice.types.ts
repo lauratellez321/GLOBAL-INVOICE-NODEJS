@@ -31,7 +31,7 @@ export interface User {
 }
 export interface UserRepository {
   find(email: string): Promise<User | undefined>;
-  createIfMissing(user: Omit<User, "id">): Promise<void>;
+  create(user: Omit<User, "id">): Promise<void>;
 }
 export interface InvoiceTypeConfig {
   code: string;
