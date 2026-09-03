@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { env } from "./config/env.js";
 import {
   openDatabase,
@@ -46,16 +45,6 @@ export async function createApplication(onInvoiceChanged = () => {}) {
     invoiceRepository = new SqliteInvoiceRepository(database);
     typeRepository = new SqliteInvoiceTypeRepository(database);
     userRepository = new SqliteUserRepository(database);
-  }
-
-  for (const seed of env.seeds) {
-    if (seed.email && seed.password) {
-      await userRepository.createIfMissing({
-        email: seed.email,
-        passwordHash: await bcrypt.hash(seed.password, 12),
-        role: seed.role,
-      });
-    }
   }
 
   const calculator = new TaxCalculator([

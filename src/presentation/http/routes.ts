@@ -5,6 +5,14 @@ import { InvoiceService } from "../../application/invoice.service.js";
 import { UnknownInvoiceTypeError } from "../../domain/invoice/tax-calculator.js";
 import { InvoiceTypeService } from "../../application/invoice-type.service.js";
 import { allow, authenticate } from "./middleware/auth.middleware.js";
+
+function isDuplicateUserError(error: unknown) {
+  return typeof error === "object" && error !== null &&
+    ("code" in error) &&
+    ((error as { code?: string }).code === "23505" ||
+      (error as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE");
+}
+
 export function apiRouter(
   auth: AuthService,
   invoices: InvoiceService,
@@ -12,6 +20,24 @@ export function apiRouter(
 ) {
   const router = Router();
   const secured = authenticate(jwtSecret);
+  router.post("/auth/register", async (req, res) => {
+    const input = z.object({
+      email: z.string().trim().email(),
+      password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+      role: z.enum(["OPERATOR", "AUDITOR"]),
+    }).safeParse(req.body);
+    if (!input.success)
+      return res.status(400).json({ message: input.error.issues[0].message });
+    try {
+      await auth.register(input.data.email, input.data.password, input.data.role);
+      return res.status(201).json({ message: "Usuario registrado correctamente" });
+    } catch (error) {
+      if (isDuplicateUserError(error))
+        return res.status(409).json({ message: "Ya existe un usuario con ese correo" });
+      console.error("No fue posible registrar el usuario", error);
+      return res.status(500).json({ message: "No fue posible registrar el usuario" });
+    }
+  });
   router.get('/invoice-types', secured, allow('OPERATOR','AUDITOR'), async (_req,res) => res.json(await types.all()));
   router.post('/invoice-types', secured, allow('OPERATOR'), async (req,res) => { const input=z.object({code:z.string().trim().min(2).max(30).regex(/^[A-Z0-9_]+$/),vatRate:z.number().min(0).max(1),withholdingRate:z.number().min(0).max(1)}).safeParse(req.body); if(!input.success)return res.status(400).json({message:'Configuración inválida'}); try{return res.status(201).json(await types.create(input.data));}catch{return res.status(409).json({message:'El tipo ya existe'});} });
   router.post("/auth/login", async (req, res) => {

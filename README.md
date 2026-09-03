@@ -18,10 +18,9 @@ En el proyecto de Vercel configure estas variables de entorno:
 
 - `JWT_SECRET`: cadena secreta de 32 caracteres o más.
 - `CLIENT_ORIGIN`: URL pública del frontend, sin `/` final.
-- `SEED_OPERATOR_EMAIL`, `SEED_OPERATOR_PASSWORD`, `SEED_AUDITOR_EMAIL` y `SEED_AUDITOR_PASSWORD`: credenciales iniciales.
 - `DATABASE_URL`: cadena de conexión PostgreSQL proporcionada por Neon, Supabase o Vercel Marketplace.
 
-SQLite se mantiene únicamente para desarrollo local. En Vercel, `DATABASE_URL` es obligatoria: al primer despliegue se crean automáticamente las tablas, los tres tipos base y los usuarios definidos en `SEED_*`.
+SQLite se mantiene únicamente para desarrollo local. En Vercel, `DATABASE_URL` es obligatoria: al primer despliegue se crean automáticamente las tablas y los tres tipos base. Los usuarios se registran desde la interfaz de la aplicación.
 
 Si deseas conservar los datos que ya tienes en SQLite, configura `DATABASE_URL` en tu archivo `.env` y, desde tu equipo, ejecuta una sola vez:
 

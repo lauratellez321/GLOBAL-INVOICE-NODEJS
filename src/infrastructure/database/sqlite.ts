@@ -85,8 +85,8 @@ export class SqliteUserRepository implements UserRepository {
       )
       .get(email) as User | undefined;
   }
-  async createIfMissing(user: Omit<User, "id">) {
-    this.db.prepare("INSERT OR IGNORE INTO users (email,password_hash,role) VALUES (?,?,?)")
+  async create(user: Omit<User, "id">) {
+    this.db.prepare("INSERT INTO users (email,password_hash,role) VALUES (?,?,?)")
       .run(user.email, user.passwordHash, user.role);
   }
 }
